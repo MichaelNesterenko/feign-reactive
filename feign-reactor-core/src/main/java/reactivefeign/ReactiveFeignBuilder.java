@@ -5,6 +5,7 @@ import feign.Contract;
 import feign.FeignException;
 import feign.InvocationHandlerFactory;
 import feign.Target;
+import reactivefeign.client.PublisherHttpClientPostProcessor;
 import reactivefeign.client.ReactiveHttpExchangeFilterFunction;
 import reactivefeign.client.ReactiveHttpRequestInterceptor;
 import reactivefeign.client.ReactiveHttpResponseMapper;
@@ -91,6 +92,8 @@ public interface ReactiveFeignBuilder<T> {
     ReactiveFeignBuilder<T> fallback(T fallback);
 
     ReactiveFeignBuilder<T> fallbackFactory(FallbackFactory<T> fallbackFactory);
+
+    ReactiveFeignBuilder<T> clientPostProcessor(PublisherHttpClientPostProcessor postProcessor);
 
     /**
      * Defines target and builds client.

@@ -32,6 +32,7 @@ import reactivefeign.publisher.retry.MonoRetryPublisherHttpClient;
 import reactivefeign.retry.ReactiveRetryPolicy;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.util.context.Context;
 import reactor.util.retry.Retry;
 
 import java.lang.reflect.InvocationHandler;
@@ -40,6 +41,7 @@ import java.lang.reflect.Proxy;
 import java.lang.reflect.Type;
 import java.time.Clock;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -142,6 +144,7 @@ public class ReactiveFeign {
     protected InvocationHandlerFactory invocationHandlerFactory =
             new ReactiveInvocationHandler.Factory();
     protected boolean decode404 = false;
+    private PublisherHttpClientPostProcessor clientPostProcessor;
 
     private ReactiveRetryPolicy retryPolicy;
     protected FallbackFactory fallbackFactory;
@@ -226,6 +229,12 @@ public class ReactiveFeign {
     }
 
     @Override
+    public ReactiveFeignBuilder<T> clientPostProcessor(PublisherHttpClientPostProcessor postProcessor) {
+        this.clientPostProcessor = Objects.requireNonNull(postProcessor);
+        return this;
+    }
+
+    @Override
     public PublisherClientFactory buildReactiveClientFactory() {
       return new PublisherClientFactory(){
 
@@ -264,12 +273,10 @@ public class ReactiveFeign {
             reactiveClient = exchangeFilterFunction.get().filter(reactiveClient);
           }
 
-          reactivefeign.publisher.PublisherHttpClient publisherClient = toPublisher(reactiveClient, methodMetadata);
-          if (retryPolicy != null) {
-            publisherClient = retry(publisherClient, methodMetadata, retryPolicy.toRetryFunction());
-          }
-
-          return publisherClient;
+          return Optional.of(toPublisher(reactiveClient, methodMetadata)) // TODO would be better to have customizers as options
+            .map(client -> retryPolicy != null ? retry(client, methodMetadata, retryPolicy.toRetryFunction()) : client)
+            .map(client -> clientPostProcessor != null ? clientPostProcessor.apply(client) : client)
+            .get();
         }
       };
     }

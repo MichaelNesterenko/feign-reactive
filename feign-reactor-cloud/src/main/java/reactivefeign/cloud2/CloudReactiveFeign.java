@@ -11,6 +11,7 @@ import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalanc
 import reactivefeign.FallbackFactory;
 import reactivefeign.ReactiveFeignBuilder;
 import reactivefeign.ReactiveOptions;
+import reactivefeign.client.PublisherHttpClientPostProcessor;
 import reactivefeign.client.ReactiveHttpExchangeFilterFunction;
 import reactivefeign.client.ReactiveHttpRequestInterceptor;
 import reactivefeign.client.ReactiveHttpResponseMapper;
@@ -124,6 +125,12 @@ public class CloudReactiveFeign {
         @Override
         public Builder<T> decode404() {
             builder = builder.decode404();
+            return this;
+        }
+
+        @Override
+        public ReactiveFeignBuilder<T> clientPostProcessor(PublisherHttpClientPostProcessor postProcessor) {
+            builder = builder.clientPostProcessor(postProcessor);
             return this;
         }
 
